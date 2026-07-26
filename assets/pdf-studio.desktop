@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=PDF Studio
+GenericName=PDF Toolkit
+Comment=Merge, compress, remove pages, and convert PDFs to carousel images
+Exec=/home/metaphysicist/Coding/2026/pdf-processor/dist/PDFStudio
+Path=/home/metaphysicist/Coding/2026/pdf-processor
+Icon=/home/metaphysicist/Coding/2026/pdf-processor/assets/logo.png
+Terminal=false
+Categories=Office;
+Keywords=PDF;merge;compress;carousel;Instagram;LinkedIn;
+StartupNotify=true
