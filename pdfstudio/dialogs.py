@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""native_dialog.py - native OS file dialogs with a Tk fallback.
+"""dialogs.py - native OS file dialogs with a Tk fallback.
 
 Tkinter's built-in file chooser looks dated on Linux (old Motif style). On
 GNOME/Ubuntu we shell out to ``zenity`` to get the real GTK file picker; if

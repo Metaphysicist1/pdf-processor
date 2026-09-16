@@ -6,15 +6,16 @@ this repo behind one interface:
 
     - Merge          : combine several PDFs into one (drag to reorder)
     - Compress       : shrink a PDF by recompressing images + streams
+    - Strip Metadata : remove Author/Creator/Producer/title/timestamps
     - Remove Pages   : delete specific pages from a PDF
     - PDF to Images  : split a PDF into carousel images (Instagram)
     - Images to PDF  : combine images into one PDF (LinkedIn document post)
 
 All heavy work runs in a background thread; the UI stays responsive and shows a
-live progress bar. Business logic lives in ``pdf_engine.py``.
+live progress bar. Business logic lives in ``pdfstudio.engine``.
 
-Run:  python app.py
-Dependencies (see requirements.txt): customtkinter, pypdf, pymupdf, Pillow.
+Run:  python run.py   or   python -m pdfstudio
+Dependencies (see requirements.txt): customtkinter, pypdf, pymupdf, Pillow, pikepdf.
 """
 
 from __future__ import annotations
@@ -29,8 +30,8 @@ from typing import Callable, Optional
 import customtkinter as ctk
 from PIL import Image
 
-import native_dialog as dialogs
-import pdf_engine as engine
+from pdfstudio import dialogs
+from pdfstudio import engine
 
 PDF_FILTER = [("PDF files", ["*.pdf"]), ("All files", ["*"])]
 IMAGE_FILTER = [("Images", ["*.png", "*.jpg", "*.jpeg"]), ("All files", ["*"])]
@@ -44,7 +45,8 @@ APP_VERSION = "1.0"
 if getattr(sys, "frozen", False):
     _BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
 else:
-    _BASE = Path(__file__).resolve().parent
+    # Package lives in pdfstudio/; assets/ is at the repository root.
+    _BASE = Path(__file__).resolve().parent.parent
 ASSETS = _BASE / "assets"
 
 ctk.set_appearance_mode("dark")

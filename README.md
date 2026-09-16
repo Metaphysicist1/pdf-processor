@@ -4,7 +4,7 @@
 
 # PDF Studio
 
-**A modern, offline desktop toolkit for everyday PDF work — plus a scriptable CLI.**
+**Offline desktop toolkit for everyday PDF work — plus a scriptable CLI.**
 
 Merge · Compress · Strip metadata · Remove pages · PDF → carousel images · Images → PDF
 
@@ -12,131 +12,105 @@ Merge · Compress · Strip metadata · Remove pages · PDF → carousel images �
 
 ---
 
-PDF Studio is a small, dependency-light Python project. Everything runs **locally and
-offline** — your documents never leave your machine. It ships two ways to use it:
+Everything runs **locally** — documents never leave your machine.
 
-- **A desktop app** (`app.py`) with a Matrix-inspired dark UI, native file dialogs,
-  drag-to-reorder file lists, in-app themed result dialogs, and a live progress bar.
-- **A command-line tool** (`carousel.py`) for the social-media image workflows, ideal
-  for scripting and automation.
+| | |
+| --- | --- |
+| Desktop app | Matrix-inspired dark UI, native file dialogs, progress bar |
+| CLI | `pdfstudio.carousel` for Instagram / LinkedIn image workflows |
 
 <div align="center">
 <img src="assets/screenshot.png" alt="PDF Studio desktop app" width="820" />
-<br/>
-<img src="assets/dialog.png" alt="In-app themed completion dialog" width="820" />
 </div>
 
 ## Features
 
 | Tool | What it does |
 | --- | --- |
-| **Merge** | Combine several PDFs into one. Reorder them before exporting. |
-| **Compress** | Shrink a PDF by recompressing images (adjustable quality) and content streams. |
+| **Merge** | Combine several PDFs into one (reorder before export). |
+| **Compress** | Shrink a PDF by recompressing images + content streams. |
 | **Strip Metadata** | Remove Author/Creator/Producer/title/timestamps via a full pikepdf rewrite (non-reversible). |
-| **Remove Pages** | Delete specific pages (e.g. `2, 5, 9`) and keep the rest. |
-| **PDF → Images** | Rasterize each page into crisp carousel images for Instagram (4:5, 1:1, 9:16), with `pad` (letterbox) or `cover` (crop-to-fill), sRGB conversion, PNG/JPG. |
-| **Images → PDF** | Combine images into a single PDF, ready for a LinkedIn document post. |
+| **Remove Pages** | Delete specific pages (e.g. `2, 5, 9`). |
+| **PDF → Images** | Crisp carousel images for Instagram (4:5, 1:1, 9:16), `pad` / `cover`, sRGB, PNG/JPG. |
+| **Images → PDF** | Combine images into one PDF for a LinkedIn document post. |
 
-The carousel renderer renders each page at ≥ 3× the target width and downsamples with
-Lanczos (never upscales), converts CMYK/ICC sources to sRGB explicitly, and letterboxes
-using either a chosen color or the page's auto-sampled corner color.
+## For everyone (no tech skills)
 
-<div align="center">
-<img src="assets/carousel-fit.png" alt="pad (letterbox) vs cover (crop) fit modes" width="620" />
-<br/><em>Left: <code>pad</code> letterboxes with no content loss. Right: <code>cover</code> crops to fill without squashing.</em>
-</div>
+**Windows — just download and double-click**
 
-## Install
+1. Open the repo’s [**Releases**](https://github.com/Metaphysicist1/pdf-processor/releases) page.
+2. Download **`PDFStudio.exe`**.
+3. Double-click it. That’s it — no Python, no install, no terminal.
+
+> First launch: Windows may show “Windows protected your PC” (SmartScreen) because the
+> app isn’t code-signed. Click **More info** → **Run anyway**. The app is offline and
+> doesn’t send your files anywhere.
+
+You can also download a build from the latest successful
+[**Actions → Build Windows EXE**](https://github.com/Metaphysicist1/pdf-processor/actions)
+run (Artifacts → `PDFStudio-windows`).
+
+**How we verify Windows works:** GitHub builds the `.exe` on a real Windows machine
+(Actions). You (or a friend) then open `PDFStudio.exe` once on a PC and try Merge /
+Compress. We can’t run a Windows GUI from Linux — the Actions build + a quick
+double-click test on a Windows PC is the check.
+
+## Quick start (developers)
 
 Requires **Python 3.10+**.
 
+### Linux / macOS
+
+```bash
+./scripts/install.sh    # creates .venv + installs deps
+./run.sh                # starts the desktop app
+```
+
+Optional — pin to your app menu:
+
+```bash
+./scripts/install_desktop_linux.sh
+```
+
+### Windows (from source)
+
+1. Install [Python 3.10+](https://www.python.org/downloads/windows/) (tick **Add Python to PATH**).
+2. Double-click **`scripts\install.bat`**
+3. Double-click **`run.bat`** (project root)
+
+### Manual (any OS)
+
 ```bash
 python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+# Linux/macOS:  source .venv/bin/activate
+# Windows:      .venv\Scripts\activate
 pip install -r requirements.txt
+python run.py
+# or:  python -m pdfstudio
 ```
 
-Dependencies: [`pymupdf`](https://pymupdf.readthedocs.io) (rasterization),
-[`Pillow`](https://python-pillow.org) (imaging), [`pypdf`](https://pypdf.readthedocs.io)
-(merge/compress/remove), [`pikepdf`](https://pikepdf.readthedocs.io) (strip metadata),
-and [`customtkinter`](https://customtkinter.tomschimansky.com) (the desktop UI).
-No poppler, ImageMagick, ExifTool, or other system binaries required.
+## Build a standalone app
 
-## Run the desktop app
+| OS | How | Output |
+| --- | --- | --- |
+| Windows (CI) | Push a tag `v1.0.0` **or** run **Actions → Build Windows EXE → Run workflow** | `PDFStudio.exe` artifact / Release |
+| Windows (local) | Double-click `scripts\build_windows.bat` | `dist\PDFStudio.exe` |
+| Linux | `./scripts/build_linux.sh` | `dist/PDFStudio` |
+
+PyInstaller does **not** cross-compile — CI builds Windows on `windows-latest`.  
+After building on Linux, re-run `./scripts/install_desktop_linux.sh` to point the menu entry at the binary.
+
+## Command-line (carousel)
 
 ```bash
-python app.py
+# after install / with venv active
+python -m pdfstudio.carousel split input.pdf -o slides/
+python -m pdfstudio.carousel split input.pdf -o slides/ --size 1x1 --fit cover --format jpg
+python -m pdfstudio.carousel build slides/ -o carousel.pdf
+
+# same via shim
+python scripts/carousel_cli.py split input.pdf -o slides/
 ```
-
-Pick a tool from the sidebar, add your files, set the options, choose an output location,
-and hit the action button. Long operations run on a background thread so the window stays
-responsive.
-
-## Windows: install as a desktop app
-
-You can get PDF Studio running on Windows in two ways.
-
-### Option A — one-click executable (recommended for non-developers)
-
-This bundles Python and every dependency into a **single `PDFStudio.exe`**. The person
-running it needs nothing installed — just double-click.
-
-1. Install [Python 3.10+](https://www.python.org/downloads/windows/) (tick *“Add
-   Python to PATH”* during setup). You only need this to **build** the exe, not to run it.
-2. Download/clone this project.
-3. Double-click **`build_windows.bat`** (or run it from a terminal). It creates a virtual
-   environment, installs dependencies + PyInstaller, and builds the app.
-4. When it finishes, your app is at **`dist\PDFStudio.exe`**.
-
-Share or move `dist\PDFStudio.exe` anywhere and double-click to run. To make it feel
-installed, right-click it → *Pin to Start* / *Pin to taskbar*, or right-click on the
-Desktop → *New → Shortcut* and point it at the exe. The window and taskbar use the
-Matrix logo icon automatically.
-
-> Prefer the command line? From the project folder:
->
-> ```bat
-> python -m venv .venv
-> .venv\Scripts\activate
-> pip install -r requirements.txt pyinstaller
-> pyinstaller --noconfirm PDFStudio.spec
-> ```
-
-The build config lives in `PDFStudio.spec` (single-file, windowed, custom icon).
-PyInstaller does **not** cross-compile, so build the `.exe` **on a Windows machine**
-(the same spec produces a Linux/macOS binary when run there).
-
-### Option B — run from source
-
-If you already have Python, you don't need to build anything:
-
-```bat
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-python app.py
-```
-
-On Windows the file open/save dialogs are the native Windows ones automatically; on
-GNOME/Ubuntu they use the native GTK picker (`zenity`), falling back to a built-in
-chooser elsewhere.
-
-## Command-line usage
-
-**Split a PDF into carousel images:**
-
-```bash
-python carousel.py split input.pdf -o slides/
-python carousel.py split input.pdf -o slides/ --size 1x1 --fit cover --format jpg
-```
-
-**Build a PDF from a folder of images:**
-
-```bash
-python carousel.py build slides/ -o carousel.pdf
-```
-
-`split` options:
 
 | Flag | Values | Default | Notes |
 | --- | --- | --- | --- |
@@ -146,33 +120,35 @@ python carousel.py build slides/ -o carousel.pdf
 | `--format` | `png`, `jpg` | `png` | jpg is quality 95, no chroma subsampling |
 | `--max-slides` | integer | all | Instagram caps carousels at 20 |
 
-## Project structure
+## Project layout
 
 ```
 pdf-processor/
-├── app.py             # Desktop app (CustomTkinter UI)
-├── native_dialog.py   # Native GTK/zenity file dialogs (Tk fallback)
-├── pdf_engine.py      # Shared ops: merge / compress / strip metadata / remove / split / build
-├── carousel.py        # Single-file CLI for PDF <-> carousel images
-├── compress_pdf.py    # Standalone compress example script
-├── merge_pdfs.py      # Standalone merge example script
-├── remove_page.py     # Standalone remove-page example script
-├── PDFStudio.spec     # PyInstaller build config (single-file, windowed, icon)
-├── build_windows.bat  # One-click Windows build script -> dist/PDFStudio.exe
+├── run.py / run.sh / run.bat   # one-click launchers
 ├── requirements.txt
-└── assets/
-    ├── logo.png       # Matrix-style app logo
-    ├── logo.ico       # Windows executable icon
-    ├── screenshot.png # App UI screenshot
-    └── dialog.png     # In-app result dialog screenshot
+├── assets/                     # logo, screenshots, desktop template
+├── pdfstudio/                  # application package
+│   ├── app.py                  # desktop UI
+│   ├── engine.py               # merge / compress / strip / remove / split / build
+│   ├── carousel.py             # PDF <-> image CLI
+│   └── dialogs.py              # native file dialogs
+├── examples/                   # tiny standalone pypdf scripts
+├── scripts/                    # install, run, build, desktop helpers
+└── packaging/
+    └── PDFStudio.spec          # PyInstaller config
 ```
 
-`app.py` and `carousel.py` both build on the pure functions in `pdf_engine.py`, so the
-GUI and CLI share identical, tested behavior.
+## Dependencies
+
+[`pymupdf`](https://pymupdf.readthedocs.io) · [`Pillow`](https://python-pillow.org) ·
+[`pypdf`](https://pypdf.readthedocs.io) · [`pikepdf`](https://pikepdf.readthedocs.io) ·
+[`customtkinter`](https://customtkinter.tomschimansky.com)
+
+No poppler, ImageMagick, ExifTool, or other system binaries required.  
+On Linux, optional `zenity` gives the native GTK file picker (falls back otherwise).
 
 ## Notes
 
-- Everything is local and offline — no network calls, no telemetry.
-- Metadata stripping uses pikepdf (full rewrite), not ExifTool, so old values are not recoverable.
-- Filenames from `split` are zero-padded (`slide_01.png`, `slide_02.png`) so ordering is
-  preserved everywhere, and `build` uses natural sort (`slide_2` before `slide_10`).
+- Offline only — no network calls, no telemetry.
+- Metadata stripping fully rewrites the PDF (old values not recoverable).
+- `split` writes zero-padded names (`slide_01.png`); `build` uses natural sort.

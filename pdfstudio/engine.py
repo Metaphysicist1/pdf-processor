@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""pdf_engine.py - the shared PDF/image operations behind the CLI and the app.
+"""engine.py - shared PDF/image operations behind the CLI and the app.
 
 This module contains pure, UI-agnostic functions. Each takes an optional
 ``progress`` callback ``Callable[[float, str], None]`` (fraction 0..1, message)
@@ -9,8 +9,8 @@ with a clear, user-facing message.
 Dependencies (see requirements.txt):
     - pypdf     : merge / compress / remove pages
     - pikepdf   : strip metadata (full rewrite)
-    - PyMuPDF   : PDF rasterization (via carousel.py)
-    - Pillow    : image operations (via carousel.py)
+    - PyMuPDF   : PDF rasterization (via carousel)
+    - Pillow    : image operations (via carousel)
 """
 
 from __future__ import annotations
@@ -22,9 +22,9 @@ from typing import Callable, Iterable, Optional, Sequence
 import pikepdf
 from pypdf import PdfReader, PdfWriter
 
-import carousel
+from pdfstudio import carousel
 
-logger = logging.getLogger("pdf_engine")
+logger = logging.getLogger("pdfstudio.engine")
 
 Progress = Callable[[float, str], None]
 

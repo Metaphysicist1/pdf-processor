@@ -1,30 +1,40 @@
 # -*- mode: python ; coding: utf-8 -*-
 """PyInstaller build spec for PDF Studio.
 
-Build a single-file, windowed executable:
+From the repository root:
 
-    pip install pyinstaller
-    pyinstaller PDFStudio.spec
+    pyinstaller --noconfirm packaging/PDFStudio.spec
 
 Output:  dist/PDFStudio.exe   (Windows)  /  dist/PDFStudio (Linux/macOS)
 
-Note: PyInstaller does NOT cross-compile. Run it on Windows to get a .exe,
-on macOS to get a macOS binary, etc.
+PyInstaller does NOT cross-compile — build on the target OS.
 """
+
+from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files
 
-# Only bundle what isn't already handled by PyInstaller's built-in hooks.
-# (pymupdf / fitz and Pillow have working hooks; we add customtkinter's theme
-# JSON/assets and our own assets folder.)
-datas = [("assets", "assets")]
+ROOT = Path(SPECPATH).resolve().parent  # packaging/ -> repo root
+# When the spec is in packaging/, SPECPATH is packaging/; parent is repo root.
+# PyInstaller sets SPECPATH to the directory containing the spec file.
+
+datas = [(str(ROOT / "assets"), "assets")]
 datas += collect_data_files("customtkinter")
 
-hiddenimports = ["fitz", "pymupdf", "PIL._tkinter_finder"]
+hiddenimports = [
+    "fitz",
+    "pymupdf",
+    "PIL._tkinter_finder",
+    "pdfstudio",
+    "pdfstudio.app",
+    "pdfstudio.engine",
+    "pdfstudio.carousel",
+    "pdfstudio.dialogs",
+]
 
 a = Analysis(
-    ["app.py"],
-    pathex=[],
+    [str(ROOT / "run.py")],
+    pathex=[str(ROOT)],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
@@ -50,11 +60,11 @@ exe = EXE(
     upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,          # windowed app, no terminal window
+    console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon="assets/logo.ico",
+    icon=str(ROOT / "assets" / "logo.ico"),
 )
