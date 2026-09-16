@@ -8,6 +8,7 @@ with a clear, user-facing message.
 
 Dependencies (see requirements.txt):
     - pypdf     : merge / compress / remove pages
+    - pikepdf   : strip metadata (full rewrite)
     - PyMuPDF   : PDF rasterization (via carousel.py)
     - Pillow    : image operations (via carousel.py)
 """
@@ -18,6 +19,7 @@ import logging
 from pathlib import Path
 from typing import Callable, Iterable, Optional, Sequence
 
+import pikepdf
 from pypdf import PdfReader, PdfWriter
 
 import carousel
@@ -134,6 +136,55 @@ def compress_pdf(
         "saved_pct": saved,
         "output": str(output_path),
     }
+
+
+# --- Strip metadata --------------------------------------------------------
+
+
+def strip_pdf_metadata(input_path: str | Path, output_path: str | Path) -> None:
+    """Remove all document metadata from a PDF so original values cannot be recovered.
+
+    Clears Producer, Creator, Author, title, and timestamp fields from the
+    document info dictionary, and deletes the XMP metadata stream when present.
+    Removal is non-reversible because pikepdf fully rewrites the document
+    (unlike tools that append changes and leave old metadata recoverable).
+    """
+    try:
+        with pikepdf.open(input_path) as pdf:
+            # Empty the Info dictionary. Object.clear() only works for arrays in
+            # current pikepdf, so remove every key (same end state as clear()).
+            for key in list(pdf.docinfo.keys()):
+                del pdf.docinfo[key]
+            if "/Metadata" in pdf.Root:
+                del pdf.Root.Metadata
+            pdf.save(output_path)
+    except Exception as exc:  # noqa: BLE001
+        raise ValueError(f"Not a valid PDF or could not strip metadata: {input_path}") from exc
+
+
+def strip_metadata(
+    input_path: str | Path,
+    output_path: str | Path,
+    progress: Optional[Progress] = None,
+) -> dict:
+    """UI-friendly wrapper around :func:`strip_pdf_metadata`."""
+    input_path = Path(input_path)
+    if not input_path.is_file():
+        raise EngineError(f"Input PDF not found: {input_path}")
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    _report(progress, 0.2, "Opening PDF")
+    try:
+        strip_pdf_metadata(input_path, output_path)
+    except ValueError as exc:
+        raise EngineError(str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001
+        raise EngineError(f"Could not strip metadata: {exc}") from exc
+
+    _report(progress, 1.0, "Done")
+    return {"output": str(output_path), "mb": _mb(output_path)}
 
 
 # --- Remove pages ----------------------------------------------------------

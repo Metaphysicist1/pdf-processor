@@ -509,6 +509,52 @@ class CompressPage(BasePage):
                 f"Saved to:\n{result['output']}")
 
 
+class StripMetadataPage(BasePage):
+    title = "Strip Metadata"
+    subtitle = "Remove Author, Creator, Producer, title, and timestamps. Non-reversible rewrite."
+    icon = "\u2205"
+    run_label = "Strip Metadata"
+
+    def build_body(self, parent) -> None:
+        c = self.card(parent, "Source PDF")
+        outlined_button(c, "Choose PDF", self._choose).pack(anchor="w", pady=(0, 12))
+        self.files = FileList(c, reorder=False, empty_hint="No PDF selected")
+        self.files.pack(fill="x")
+        ctk.CTkLabel(
+            c,
+            text="Rewrites the whole PDF with pikepdf so old metadata cannot be recovered "
+                 "(unlike ExifTool append edits).",
+            text_color=COL_MUTED, font=f(11), wraplength=640, justify="left",
+        ).pack(anchor="w", pady=(10, 0))
+
+        o = self.card(parent, "Output")
+        self.out = PathPicker(
+            o, lambda: self.save_pdf("no_metadata.pdf"),
+            "Choose where to save the cleaned PDF",
+        )
+        self.out.pack(fill="x")
+
+    def _choose(self) -> None:
+        p = self.pick_pdf()
+        if p:
+            self.files.set_single(p)
+            if not self.out.get():
+                self.out.set(str(Path(p).with_name(Path(p).stem + "_no_metadata.pdf")))
+
+    def collect_job(self):
+        paths = self.files.get_paths()
+        if not paths:
+            raise engine.EngineError("Choose a PDF.")
+        out = self.out.get()
+        if not out:
+            raise engine.EngineError("Choose an output file.")
+        return lambda prog: engine.strip_metadata(paths[0], out, progress=prog)
+
+    def describe_result(self, result: dict) -> str:
+        return (f"Metadata stripped (non-reversible).\n\n"
+                f"Saved to:\n{result['output']}\n({result['mb']:.2f} MB)")
+
+
 class RemovePage(BasePage):
     title = "Remove Pages"
     subtitle = "Delete specific pages from a PDF (e.g. 2, 5, 9)."
@@ -741,6 +787,7 @@ class App(ctk.CTk):
     PAGES = [
         ("Merge", MergePage),
         ("Compress", CompressPage),
+        ("Strip Metadata", StripMetadataPage),
         ("Remove Pages", RemovePage),
         ("PDF \u2192 Images", SplitPage),
         ("Images \u2192 PDF", BuildPage),

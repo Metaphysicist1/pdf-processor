@@ -6,7 +6,7 @@
 
 **A modern, offline desktop toolkit for everyday PDF work — plus a scriptable CLI.**
 
-Merge · Compress · Remove pages · PDF → carousel images · Images → PDF
+Merge · Compress · Strip metadata · Remove pages · PDF → carousel images · Images → PDF
 
 </div>
 
@@ -32,6 +32,7 @@ offline** — your documents never leave your machine. It ships two ways to use 
 | --- | --- |
 | **Merge** | Combine several PDFs into one. Reorder them before exporting. |
 | **Compress** | Shrink a PDF by recompressing images (adjustable quality) and content streams. |
+| **Strip Metadata** | Remove Author/Creator/Producer/title/timestamps via a full pikepdf rewrite (non-reversible). |
 | **Remove Pages** | Delete specific pages (e.g. `2, 5, 9`) and keep the rest. |
 | **PDF → Images** | Rasterize each page into crisp carousel images for Instagram (4:5, 1:1, 9:16), with `pad` (letterbox) or `cover` (crop-to-fill), sRGB conversion, PNG/JPG. |
 | **Images → PDF** | Combine images into a single PDF, ready for a LinkedIn document post. |
@@ -57,8 +58,9 @@ pip install -r requirements.txt
 
 Dependencies: [`pymupdf`](https://pymupdf.readthedocs.io) (rasterization),
 [`Pillow`](https://python-pillow.org) (imaging), [`pypdf`](https://pypdf.readthedocs.io)
-(merge/compress/remove), and [`customtkinter`](https://customtkinter.tomschimansky.com)
-(the desktop UI). No poppler, ImageMagick, or other system binaries required.
+(merge/compress/remove), [`pikepdf`](https://pikepdf.readthedocs.io) (strip metadata),
+and [`customtkinter`](https://customtkinter.tomschimansky.com) (the desktop UI).
+No poppler, ImageMagick, ExifTool, or other system binaries required.
 
 ## Run the desktop app
 
@@ -150,17 +152,19 @@ python carousel.py build slides/ -o carousel.pdf
 pdf-processor/
 ├── app.py             # Desktop app (CustomTkinter UI)
 ├── native_dialog.py   # Native GTK/zenity file dialogs (Tk fallback)
-├── pdf_engine.py      # Shared, UI-agnostic operations (merge/compress/remove/split/build)
+├── pdf_engine.py      # Shared ops: merge / compress / strip metadata / remove / split / build
 ├── carousel.py        # Single-file CLI for PDF <-> carousel images
-├── compress_pdf.py    # Original standalone compress script
-├── merge_pdfs.py      # Original standalone merge script
-├── remove_page.py     # Original standalone remove-page script
+├── compress_pdf.py    # Standalone compress example script
+├── merge_pdfs.py      # Standalone merge example script
+├── remove_page.py     # Standalone remove-page example script
 ├── PDFStudio.spec     # PyInstaller build config (single-file, windowed, icon)
 ├── build_windows.bat  # One-click Windows build script -> dist/PDFStudio.exe
 ├── requirements.txt
 └── assets/
     ├── logo.png       # Matrix-style app logo
-    └── logo.ico       # Windows executable icon
+    ├── logo.ico       # Windows executable icon
+    ├── screenshot.png # App UI screenshot
+    └── dialog.png     # In-app result dialog screenshot
 ```
 
 `app.py` and `carousel.py` both build on the pure functions in `pdf_engine.py`, so the
@@ -169,5 +173,6 @@ GUI and CLI share identical, tested behavior.
 ## Notes
 
 - Everything is local and offline — no network calls, no telemetry.
+- Metadata stripping uses pikepdf (full rewrite), not ExifTool, so old values are not recoverable.
 - Filenames from `split` are zero-padded (`slide_01.png`, `slide_02.png`) so ordering is
   preserved everywhere, and `build` uses natural sort (`slide_2` before `slide_10`).
